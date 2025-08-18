@@ -35,6 +35,7 @@ function draw() {
     background(255);
     image(dawg, 100, 110, 300, 300);
     
+    fft.analyze()
     freqRanges.low.level = fft.getEnergy(freqRanges.low.min, freqRanges.low.max);
     freqRanges.mid.level = fft.getEnergy(freqRanges.mid.min, freqRanges.mid.max);
     freqRanges.high.level = fft.getEnergy(freqRanges.high.min, freqRanges.high.max);
