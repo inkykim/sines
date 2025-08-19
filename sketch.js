@@ -1,9 +1,10 @@
-let pilsplaat, dawg, fft, amplitude;
+let pilsplaat, dawg, fft, amplitude, fhk;
 const freqRanges = {
     low: { min: 20, max: 250, level: 0, peak: 0 },
-    mid: { min: 250, max: 4000, level: 0, peak: 0 },
-    high: { min: 4000, max: 20000, level: 0, peak: 0 }
+    mid: { min: 251, max: 4000, level: 0, peak: 0 },
+    high: { min: 4001, max: 20000, level: 0, peak: 0 }
 };
+const bassThreshold = 30;
 
 function preload() {
     pilsplaat = loadSound('assets/pilsplaat.wav');
@@ -13,9 +14,9 @@ function preload() {
 function setup() {
     createCanvas(windowWidth, windowHeight);
     fft = new p5.FFT(0.8, 1024);
-    amplitude = new p5.Amplitude(); 
+
     fft.setInput(pilsplaat);
-    amplitude.setInput(pilsplaat);
+
     const button = createButton('Play');
     button.position(150, 50);
     button.mousePressed(() => {
@@ -31,20 +32,39 @@ function setup() {
     });
 }
 
+function kickDetect() {
+
+    let bassEnergy = fft.getEnergy('bass');
+
+    if (bassEnergy > bassThreshold) {
+        image(dawg, 0, 0, width, height);
+    }
+}
+
 function draw() {
     background(255);
-    image(dawg, 100, 110, 300, 300);
+        
+    let spectrum = fft.analyze();
     
-    fft.analyze()
-    freqRanges.low.level = fft.getEnergy(freqRanges.low.min, freqRanges.low.max);
-    freqRanges.mid.level = fft.getEnergy(freqRanges.mid.min, freqRanges.mid.max);
-    freqRanges.high.level = fft.getEnergy(freqRanges.high.min, freqRanges.high.max);
+    kickDetect();
 
-    noStroke();
-    fill(255, 0, 0);
-    rect(100, 450, 50, -freqRanges.low.level);
-    fill(0, 255, 0);
-    rect(200, 450, 50, -freqRanges.mid.level);
-    fill(0, 0, 255);
-    rect(300, 450, 50, -freqRanges.high.level);
+    let w = width / spectrum.length*10;
+            
+    for (let i = 0; i < spectrum.length/10; i++) {
+        // Map frequency amplitude to height
+        let amp = spectrum[i];
+        let h = map(amp, 0, 255, 0, height - 50);
+        
+        // Create color based on frequency
+        let hue = map(i, 0, spectrum.length, 0, 360);
+        colorMode(HSB);
+        fill(hue, 80, map(amp, 0, 255, 30, 100));
+        
+        // Draw bar
+        rect(i * w, height - h - 25, w - 1, h);
+        if (amp > 50) {
+            fill(hue, 60, 40, 0.3);
+            rect(i * w - 2, height - h - 27, w + 3, h + 4);
+        }   
+    }
 }
