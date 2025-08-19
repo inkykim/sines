@@ -6,6 +6,14 @@ const freqRanges = {
 };
 const bassThreshold = 30;
 
+let ball = {
+    x: 0,
+    y: 0,
+    vx: 4.2,
+    vy: 3.1,
+    r: 200
+};
+
 function preload() {
     pilsplaat = loadSound('assets/pilsplaat.wav');
     dawg = loadImage('assets/dog.jpg');
@@ -30,6 +38,9 @@ function setup() {
             pilsplaat.loop();
         }
     });
+
+    ball.x = width/2;
+    ball.y = height/2;
 }
 
 // Spectral flux kick detection for low frequencies
@@ -38,6 +49,8 @@ let spectralFluxBuffer = [];
 const fluxBufferSize = 20;
 let lastKickTime = 0;
 const kickCooldown = 200; // ms
+
+let kickTriggered = false; // flag for kick detection
 
 function kickDetect() {
     let spectrum = fft.analyze();
@@ -62,7 +75,7 @@ function kickDetect() {
         
         let now = millis();
         if (flux > threshold && flux > 15 && now - lastKickTime > kickCooldown) {
-            image(dawg, 0, 0, width, height);
+            kickTriggered = true;
             lastKickTime = now;
         }
     }
@@ -70,15 +83,45 @@ function kickDetect() {
     prevLowSpectrum = [...currentLowSpectrum];
 }
 
+let flashAlpha = 0;
+
 function draw() {
-    background(255);
-        
-    let spectrum = fft.analyze();
-    
+    background(0);
+    fill(0);
+    noStroke();
+
     kickDetect();
 
-    let w = width / spectrum.length*10;
-            
+    if (kickTriggered) {
+        flashAlpha = 255;
+
+        ball.x = random(ball.r, width - ball.r);
+        ball.y = random(ball.r, width - ball.r);
+
+        kickTriggered = false;
+    }
+
+    // red alpha value decays
+    if (flashAlpha > 0) {
+        fill(255, 0, 0, flashAlpha);
+        flashAlpha -= 10;
+        flashAlpha = max(flashAlpha, 0);
+    }
+    
+    circle(ball.x, ball.y, ball.r*2);
+
+    // ball moves
+    ball.x += ball.vx;
+    ball.y += ball.vy;
+
+    // ball bounces
+    if (ball.x + ball.r >= width)  { ball.x = width - ball.r;  ball.vx *= -1; }
+    if (ball.x - ball.r <= 0)      { ball.x = ball.r;          ball.vx *= -1; }
+    if (ball.y + ball.r >= height) { ball.y = height - ball.r; ball.vy *= -1; }
+    if (ball.y - ball.r <= 0)      { ball.y = ball.r;          ball.vy *= -1; }
+
+    // commenting out spectrum display bars        
+    /*let w = width / spectrum.length*10;
     for (let i = 0; i < spectrum.length/10; i++) {
         // Map frequency amplitude to height
         let amp = spectrum[i];
@@ -95,5 +138,5 @@ function draw() {
             fill(hue, 60, 40, 0.3);
             rect(i * w - 2, height - h - 27, w + 3, h + 4);
         }   
-    }
+    }*/
 }
