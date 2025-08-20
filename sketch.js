@@ -6,6 +6,9 @@ const freqRanges = {
 };
 const bassThreshold = 30;
 
+let currentTrack = null;
+let fileInput, trackNameText;
+
 let ball = {
     x: 0,
     y: 0,
@@ -25,22 +28,60 @@ function setup() {
 
     fft.setInput(pilsplaat);
 
+    // UI file picker and text
+    fileInput = createFileInput(handleAudioFile, false); // false on multiple file input
+    fileInput.position(20, 20);
+    trackNameText = createSpan('pilsplaat.wav');
+    trackNameText.position(150, 25);
+    trackNameText.style('color', '#bbb');
+
     const button = createButton('Play');
     button.position(150, 50);
     button.mousePressed(() => {
         userStartAudio();
 
-        if (!pilsplaat) return;
+        const snd = getActiveSound();
+        if (!snd) return;
 
-        if (pilsplaat.isPlaying()) {
-            pilsplaat.pause();
-        } else {
-            pilsplaat.loop();
-        }
+        if (snd.isPlaying()) snd.pause();
+        else snd.loop();
     });
 
     ball.x = width/2;
     ball.y = height/2;
+}
+
+function getActiveSound() {
+    // prefer user-uploaded track, fallback to pilsplaat
+    return currentTrack || pilsplaat;
+}
+
+// Handle user audio selection
+function handleAudioFile(file) {
+    if (!file || file.type !== 'audio') {
+        console.warn('Please choose an audio file.');
+        return;
+    }
+
+    // Load the chosen audio; file.data is a data URL
+    loadSound(file.data, (snd) => {
+        // stop any currently playing track
+        const prev = getActiveSound();
+        if (prev && prev.isPlaying()) prev.stop();
+    
+        currentTrack = snd;
+        fft.setInput(currentTrack);          // route FFT to new track
+        // (optional) amplitude?.setInput(currentTrack);
+    
+        // auto-play the new track in a loop
+        userStartAudio();
+        currentTrack.loop();
+    
+        // update label
+        trackNameText.html(`${file.name}`);
+        }, (err) => {
+        console.error('Failed to load audio:', err);
+    });
 }
 
 // Spectral flux kick detection for low frequencies
@@ -96,7 +137,7 @@ function draw() {
         flashAlpha = 255;
 
         ball.x = random(ball.r, width - ball.r);
-        ball.y = random(ball.r, width - ball.r);
+        ball.y = random(ball.r, height - ball.r);
 
         kickTriggered = false;
     }
