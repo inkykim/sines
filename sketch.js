@@ -1,21 +1,38 @@
-let pilsplaat, dawg, fft, amplitude, fhk;
-const freqRanges = {
-    low: { min: 20, max: 250, level: 0, peak: 0 },
-    mid: { min: 251, max: 4000, level: 0, peak: 0 },
-    high: { min: 4001, max: 20000, level: 0, peak: 0 }
-};
-const bassThreshold = 30;
-
+let pilsplaat, dawg, fft;
 let currentTrack = null;
 let fileInput, trackNameText;
 
-let ball = {
-    x: 0,
-    y: 0,
-    vx: 4.2,
-    vy: 3.1,
-    r: 200
-};
+function getActiveSound() {
+    // prefer user-uploaded track, fallback to pilsplaat
+    return currentTrack || pilsplaat;
+}
+
+function handleAudioFile(file) {
+    if (!file || file.type !== 'audio') {
+        console.warn('Please choose an audio file.');
+        return;
+    }
+
+    // Load the chosen audio; file.data is a data URL
+    loadSound(file.data, (snd) => {
+        // stop any currently playing track
+        const prev = getActiveSound();
+        if (prev.isPlaying()) prev.stop();
+    
+        currentTrack = snd;
+        fft.setInput(currentTrack);          // route FFT to new track
+    
+        // auto-play the new track in a loop
+        userStartAudio();
+        currentTrack.loop();
+    
+        // update label
+        trackNameText.html(`${file.name}`);
+        }, (err) => {
+        console.error('Failed to load audio:', err);
+    });
+}
+
 
 function preload() {
     pilsplaat = loadSound('assets/pilsplaat.wav');
@@ -47,137 +64,21 @@ function setup() {
         else snd.loop();
     });
 
-    ball.x = width/2;
-    ball.y = height/2;
+    initializeBall();
 }
-
-function getActiveSound() {
-    // prefer user-uploaded track, fallback to pilsplaat
-    return currentTrack || pilsplaat;
-}
-
-// Handle user audio selection
-function handleAudioFile(file) {
-    if (!file || file.type !== 'audio') {
-        console.warn('Please choose an audio file.');
-        return;
-    }
-
-    // Load the chosen audio; file.data is a data URL
-    loadSound(file.data, (snd) => {
-        // stop any currently playing track
-        const prev = getActiveSound();
-        if (prev && prev.isPlaying()) prev.stop();
-    
-        currentTrack = snd;
-        fft.setInput(currentTrack);          // route FFT to new track
-        // (optional) amplitude?.setInput(currentTrack);
-    
-        // auto-play the new track in a loop
-        userStartAudio();
-        currentTrack.loop();
-    
-        // update label
-        trackNameText.html(`${file.name}`);
-        }, (err) => {
-        console.error('Failed to load audio:', err);
-    });
-}
-
-// Spectral flux kick detection for low frequencies
-let prevLowSpectrum = [];
-let spectralFluxBuffer = [];
-const fluxBufferSize = 20;
-let lastKickTime = 0;
-const kickCooldown = 200; // ms
-
-let kickTriggered = false; // flag for kick detection
-
-function kickDetect() {
-    let spectrum = fft.analyze();
-    
-    let lowBinStart = 1;
-    let lowBinEnd = 7;
-    
-    let currentLowSpectrum = spectrum.slice(lowBinStart, lowBinEnd + 1);
-    
-    if (prevLowSpectrum.length > 0) {
-        let flux = 0;
-        for (let i = 0; i < currentLowSpectrum.length; i++) {
-            let diff = currentLowSpectrum[i] - prevLowSpectrum[i];
-            if (diff > 0) flux += diff;
-        }
-        
-        spectralFluxBuffer.push(flux);
-        if (spectralFluxBuffer.length > fluxBufferSize) spectralFluxBuffer.shift();
-        
-        let meanFlux = spectralFluxBuffer.reduce((a, b) => a + b, 0) / spectralFluxBuffer.length;
-        let threshold = meanFlux * 1.8;
-        
-        let now = millis();
-        if (flux > threshold && flux > 15 && now - lastKickTime > kickCooldown) {
-            kickTriggered = true;
-            lastKickTime = now;
-        }
-    }
-    
-    prevLowSpectrum = [...currentLowSpectrum];
-}
-
-let flashAlpha = 0;
 
 function draw() {
     background(0);
-    fill(0);
-    noStroke();
+    let spectrum = fft.analyze();
 
-    kickDetect();
-
-    if (kickTriggered) {
-        flashAlpha = 255;
-
-        ball.x = random(ball.r, width - ball.r);
-        ball.y = random(ball.r, height - ball.r);
-
-        kickTriggered = false;
+    if (kickDetect(spectrum)) {
+        onEventDetected();
     }
 
-    // red alpha value decays
-    if (flashAlpha > 0) {
-        fill(255, 0, 0, flashAlpha);
-        flashAlpha -= 10;
-        flashAlpha = max(flashAlpha, 0);
-    }
-    
-    circle(ball.x, ball.y, ball.r*2);
+    updateBall();
+    updateFlash();
+    drawBall();
 
-    // ball moves
-    ball.x += ball.vx;
-    ball.y += ball.vy;
-
-    // ball bounces
-    if (ball.x + ball.r >= width)  { ball.x = width - ball.r;  ball.vx *= -1; }
-    if (ball.x - ball.r <= 0)      { ball.x = ball.r;          ball.vx *= -1; }
-    if (ball.y + ball.r >= height) { ball.y = height - ball.r; ball.vy *= -1; }
-    if (ball.y - ball.r <= 0)      { ball.y = ball.r;          ball.vy *= -1; }
-
-    // commenting out spectrum display bars        
-    /*let w = width / spectrum.length*10;
-    for (let i = 0; i < spectrum.length/10; i++) {
-        // Map frequency amplitude to height
-        let amp = spectrum[i];
-        let h = map(amp, 0, 255, 0, height - 50);
-        
-        // Create color based on frequency
-        let hue = map(i, 0, spectrum.length, 0, 360);
-        colorMode(HSB);
-        fill(hue, 80, map(amp, 0, 255, 30, 100));
-        
-        // Draw bar
-        rect(i * w, height - h - 25, w - 1, h);
-        if (amp > 50) {
-            fill(hue, 60, 40, 0.3);
-            rect(i * w - 2, height - h - 27, w + 3, h + 4);
-        }   
-    }*/
+    // commenting out spectrum display bars
+    // displayFullSpectrum(spectrum); 
 }
