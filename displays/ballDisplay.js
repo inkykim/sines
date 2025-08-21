@@ -1,58 +1,103 @@
 // Ball display and animation functions
+let balls = [];
+let NUM_BALLS = 10;
+const R_MIN = 60;
+const R_MAX = 180;
 
-let ball = {
-    x: 0,
-    y: 0,
-    vx: 4.2,
-    vy: 3.1,
-    r: 200
-};
+let BASE_COLOR = [255, 255, 255];
+let PEAK_COLOR = [255, 0, 0];
 
-let flashAlpha = 0;
+// functions for bringing changes from UI
+function setBaseColorFromHex(hex) {
+    const c = color(hex);
+    BASE_COLOR = [red(c), green(c), blue(c)];
+}
 
-// Initialize ball position
+function setPeakColorFromHex(hex) {
+    const c = color(hex);
+    PEAK_COLOR = [red(c), green(c), blue(c)];
+}
+
+function setBallCount(n) {
+    n = int(constrain(n, 1, 20));
+    BALL_COUNT = n;
+
+    const diff = n - balls.length;
+    if (diff > 0) {
+        for (let i = 0; i < diff; i++) {
+        balls.push(new Metaball(random(width), random(height)));
+        }
+    } else if (diff < 0) {
+        balls.splice(n);
+    }
+}
+
+class Metaball {
+    constructor(x, y, r) {
+        this.x = x;
+        this.y = y;
+        this.rBase = random(R_MIN, R_MAX);
+        this.r = this.rBase;
+        this.vx = random(-4, 4);
+        this.vy = random(-4, 4);
+        this.pulseLevel = 0;
+    }
+
+    update() { // update position, handle bouncing and pulsing
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // bounce off walls
+        if (this.x + this.r >= width)  { this.x = width - this.r;  this.vx *= -1; }
+        if (this.x - this.r <= 0)      { this.x = this.r;          this.vx *= -1; }
+        if (this.y + this.r >= height) { this.y = height - this.r; this.vy *= -1; }
+        if (this.y - this.r <= 0)      { this.y = this.r;          this.vy *= -1; }
+
+        // fade back from pulse
+        this.r = lerp(this.r, this.rBase, 0.08);
+        this.pulseLevel = max(this.pulseLevel - 10, 0);
+    }
+
+    // set brightness to max for pulse effect, slightly increase radius
+    pulse(amount = 10) {
+        this.r = min(this.r + amount, this.rBase * 1.8);
+        this.pulseLevel = 255;
+    }
+
+    draw() {
+        let t = this.pulseLevel / 255;
+        let r = lerp(BASE_COLOR[0], PEAK_COLOR[0], t);
+        let g = lerp(BASE_COLOR[1], PEAK_COLOR[1], t);
+        let b = lerp(BASE_COLOR[2], PEAK_COLOR[2], t);
+
+        noStroke();
+        fill(r, g, b);
+        circle(this.x, this.y, this.r * 2);
+    }
+}
+
+// initialize list of balls
 function initializeBall() {
-    ball.x = width / 2;
-    ball.y = height / 2;
+    balls = [];
+    for (let i = 0; i < NUM_BALLS; i++) {
+        balls.push(new Metaball(random(width), random(height)));
+    }
 }
 
-// Update ball physics and handle kick events
+// apply update to all balls
 function updateBall() {
-    // Move ball
-    ball.x += ball.vx;
-    ball.y += ball.vy;
-
-    // Handle bouncing off walls
-    if (ball.x + ball.r >= width)  { ball.x = width - ball.r;  ball.vx *= -1; }
-    if (ball.x - ball.r <= 0)      { ball.x = ball.r;          ball.vx *= -1; }
-    if (ball.y + ball.r >= height) { ball.y = height - ball.r; ball.vy *= -1; }
-    if (ball.y - ball.r <= 0)      { ball.y = ball.r;          ball.vy *= -1; }
+    for (const ball of balls) ball.update();
 }
 
-// Handle detection event
+// start pulse effect on all balls
 function onEventDetected() {
-    flashAlpha = 255;
-    ball.x = random(ball.r, width - ball.r);
-    ball.y = random(ball.r, height - ball.r);
+    for (const ball of balls) ball.pulse();
 }
 
-// Update flash effect
-function updateFlash() {
-    if (flashAlpha > 0) {
-        flashAlpha -= 10;
-        flashAlpha = max(flashAlpha, 0);
-    }
-}
-
-// Draw the ball with current flash effect
+// draw the balls
 function drawBall() {
-    fill(0);
-    noStroke();
-    
-    // Apply flash effect if active
-    if (flashAlpha > 0) {
-        fill(255, 0, 0, flashAlpha);
-    }
-    
-    circle(ball.x, ball.y, ball.r * 2);
+    push();
+    blendMode(BLEND);
+    for (const ball of balls) ball.draw();
+    pop();
 }
