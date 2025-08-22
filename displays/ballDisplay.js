@@ -20,7 +20,7 @@ function setPeakColorFromHex(hex) {
 
 function setBallCount(n) {
     n = int(constrain(n, 1, 20));
-    BALL_COUNT = n;
+    NUM_BALLS = n;
 
     const diff = n - balls.length;
     if (diff > 0) {
@@ -29,6 +29,14 @@ function setBallCount(n) {
         }
     } else if (diff < 0) {
         balls.splice(n);
+    }
+}
+
+function setSpeed(s) {
+    s = int(constrain(s, 1, 10));
+    for (const ball of balls) {
+        ball.vx = (ball.vx > 0 ? 1 : -1) * s;
+        ball.vy = (ball.vy > 0 ? 1 : -1) * s;
     }
 }
 
@@ -98,6 +106,10 @@ function onEventDetected() {
 function drawBall() {
     push();
     blendMode(BLEND);
-    for (const ball of balls) ball.draw();
+    if (USE_METAMERGE) {
+        drawMergedBlob();
+    } else {
+        for (const ball of balls) ball.draw();
+    }
     pop();
 }
