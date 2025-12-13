@@ -1,0 +1,23 @@
+{
+  "name": "sines",
+  "version": "1.0.0",
+  "description": "Interactive audio visualization with bouncing balls",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx serve -s . -p 3000",
+    "start": "npm run dev",
+    "build": "echo 'No build step required for static site'",
+    "preview": "npx serve -s . -p 4173"
+  },
+  "keywords": ["audio", "visualization", "p5js", "interactive", "music"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "serve": "^14.2.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/inkykim/sines.git"
+  },
+  "homepage": "https://inkykim.github.io/sines"
+}

@@ -4,7 +4,7 @@
 // --- configurable field parameters ---
 const FIELD_STEP = 8;        // grid spacing in pixels (larger = faster, blockier)
 const FIELD_THRESHOLD = 1.9; // metaball threshold; tweak to taste
-let USE_METAMERGE = false;    // toggle: merged blob vs. individual circles
+let USE_METAMERGE = true;    // toggle: merged blob vs. individual circles
 
 // Scene-wide color (interpolates base→peak using max pulse level)
 function getScenePulseT() {
