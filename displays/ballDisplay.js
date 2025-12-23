@@ -113,3 +113,7 @@ function drawBall() {
     }
     pop();
 }
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+}
