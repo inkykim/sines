@@ -1,6 +1,77 @@
 let uiContainer;
 let uiVisible = false;
 
+// Lock pin references for auto-lock UI updates
+let baseColorLockPin, peakColorLockPin, bgColorLockPin;
+let ballCountLockPin, speedLockPin, metaModeLockPin;
+
+function createCollapsibleSection(parent, title, defaultExpanded) {
+    const section = createDiv('').parent(parent).style('margin-bottom', '16px');
+
+    const header = createDiv('').parent(section)
+        .style('display', 'flex')
+        .style('justify-content', 'space-between')
+        .style('align-items', 'center')
+        .style('cursor', 'pointer')
+        .style('padding', '4px 0')
+        .style('user-select', 'none');
+
+    const titleSpan = createSpan(title).parent(header)
+        .style('font-weight', 'bold')
+        .style('color', '#ccc');
+
+    const arrow = createSpan(defaultExpanded ? '▾' : '▸').parent(header)
+        .style('color', '#666')
+        .style('font-size', '14px');
+
+    const content = createDiv('').parent(section)
+        .style('display', defaultExpanded ? 'block' : 'none')
+        .style('padding-top', '8px');
+
+    header.mousePressed(() => {
+        const isOpen = content.style('display') !== 'none';
+        content.style('display', isOpen ? 'none' : 'block');
+        arrow.html(isOpen ? '▸' : '▾');
+    });
+
+    return content;
+}
+
+function createLockPin(parent, paramId) {
+    const pin = createButton('🔓').parent(parent)
+        .style('background', 'none')
+        .style('border', 'none')
+        .style('cursor', 'pointer')
+        .style('font-size', '12px')
+        .style('padding', '2px 4px')
+        .style('opacity', '0.5');
+
+    pin.mousePressed(() => {
+        if (isLocked(paramId)) {
+            unlockParam(paramId);
+            pin.html('🔓');
+            pin.style('opacity', '0.5');
+        } else {
+            lockParam(paramId);
+            pin.html('🔒');
+            pin.style('opacity', '1');
+        }
+    });
+    return pin;
+}
+
+function updateLockPinUI(pin, paramId) {
+    if (pin) {
+        if (isLocked(paramId)) {
+            pin.html('🔒');
+            pin.style('opacity', '1');
+        } else {
+            pin.html('🔓');
+            pin.style('opacity', '0.5');
+        }
+    }
+}
+
 function setupUI() {
     // Create main UI container (hidden by default)
     uiContainer = createDiv('')
@@ -48,10 +119,24 @@ function setupUI() {
         .style('margin-bottom', '20px')
         .style('padding-right', '30px');
 
-    // Setup all UI controls
-    setupColorControls(uiContainer);
-    setupBallControls(uiContainer);
-    setupAudioControls();
+    // Setup all UI controls in collapsible sections
+    const colorSection = createCollapsibleSection(uiContainer, 'Colors', true);
+    setupColorControls(colorSection);
+
+    const ballSection = createCollapsibleSection(uiContainer, 'Ball Settings', false);
+    setupBallControls(ballSection);
+
+    const audioSection = createCollapsibleSection(uiContainer, 'Audio Controls', false);
+    setupAudioControls(audioSection);
+
+    // Theme Generation section — expanded by default
+    const themeSection = createCollapsibleSection(uiContainer, 'Theme Generation', true);
+    setupThemeControls(themeSection);
+
+    // Advanced section — collapsed by default
+    const advancedSection = createCollapsibleSection(uiContainer, 'Advanced', false);
+    setupAdvancedControls(advancedSection);
+
     setupTitleDisplay();
 
     // Initialize UI values
@@ -88,13 +173,13 @@ function setupKeyboardControls() {
                     else snd.loop();
                 }
                 break;
-                
+
             case 'KeyE':
                 event.preventDefault();
                 // Toggle UI panel
                 toggleUI();
                 break;
-                
+
             case 'KeyD':
                 event.preventDefault();
                 // Toggle debug overlay

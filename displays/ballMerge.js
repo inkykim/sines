@@ -11,7 +11,9 @@ function getScenePulseT() {
     if (balls.length === 0) return 0;
     let m = 0;
     for (const b of balls) if (b.pulseLevel > m) m = b.pulseLevel;
-    return max(trebleEnergy, m / 255);
+    const routing = AppSettings.routing;
+    const colorEnergy = bassEnergy * routing.color.bass + midEnergy * routing.color.mid + trebleEnergy * routing.color.treble;
+    return max(colorEnergy, m / 255);
 }
 
 function getSceneColorRGB() {

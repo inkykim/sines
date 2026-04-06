@@ -22,7 +22,7 @@ function drawDebugOverlay() {
     const panelX = 10;
     const panelY = 10;
     const panelW = 260;
-    const panelH = 320;
+    const panelH = 340;
 
     // Semi-transparent background panel
     fill(0, 0, 0, 180);
@@ -154,6 +154,14 @@ function drawDebugOverlay() {
     fill(160);
     textSize(10);
     text(`Flux: ${lastFlux.toFixed(1)}  |  Thresh: ${lastThreshold.toFixed(1)}`, xPos, yPos);
+
+    // Last theme classification
+    if (typeof lastClassification !== 'undefined' && lastClassification) {
+        fill(200, 180, 255);
+        textSize(11);
+        text(`Theme: ${lastClassification.archetype} (d=${lastClassification.distance.toFixed(3)})`, xPos, yPos);
+        yPos += lineH;
+    }
 
     // Kick flash indicator
     if (kickFlashActive) {

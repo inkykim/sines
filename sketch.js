@@ -18,11 +18,14 @@ function setup() {
     initializeBall();
 }
 
-// Soft ramp noise floor: energy below 12 maps to 0,
-// 12-40 ramps linearly, above 40 maps linearly.
+// Soft ramp noise floor: energy below low maps to 0,
+// low-high ramps linearly, above high maps linearly.
+// Thresholds are scaled by AppSettings.reactivity (higher = more sensitive).
 function applyNoiseFloor(raw) {
-    if (raw < 12) return 0;
-    if (raw < 40) return (raw - 12) / (40 - 12) * (40 / 255);
+    const low  = 12 / AppSettings.reactivity;
+    const high = 40 / AppSettings.reactivity;
+    if (raw < low) return 0;
+    if (raw < high) return (raw - low) / (high - low) * (high / 255);
     return raw / 255;
 }
 
@@ -36,12 +39,15 @@ function draw() {
     midEnergy = applyNoiseFloor(fft.getEnergy("mid"));
     trebleEnergy = applyNoiseFloor(fft.getEnergy("treble"));
 
-    if (kickDetect(spectrum)) {
-        onEventDetected();
-    }
+    const centroid = computeSpectralCentroid(spectrum);
+    const kickDetected = kickDetect(spectrum);
+    if (kickDetected) onEventDetected();
+    pushAudioFrame(bassEnergy, midEnergy, trebleEnergy, kickDetected, lastFlux, centroid);
 
     updateBall();
     drawBall();
+
+    if (typeof updateGenerateButtonState === 'function') updateGenerateButtonState();
 
     if (typeof debugMode !== 'undefined' && debugMode) {
         drawDebugOverlay();

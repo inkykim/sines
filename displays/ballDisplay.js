@@ -53,14 +53,17 @@ class Metaball {
     }
 
     update() {
-        // Radius: continuous bass scaling + decaying kick burst
-        this.r = this.rBase * (1 + bassEnergy * 0.5) + this.kickBurst;
+        // Radius: routed band energy scaling + decaying kick burst
+        const routing = AppSettings.routing;
+        const radiusEnergy = bassEnergy * routing.radius.bass + midEnergy * routing.radius.mid + trebleEnergy * routing.radius.treble;
+        this.r = this.rBase * (1 + radiusEnergy * 0.5) + this.kickBurst;
         this.kickBurst = lerp(this.kickBurst, 0, 0.08);
 
-        // Speed: mid energy modulates around user-set baseline
-        const midMod = 1 + midEnergy * 0.8;
-        const vx = this.baseVx * midMod;
-        const vy = this.baseVy * midMod;
+        // Speed: routed band energy modulates around user-set baseline
+        const speedEnergy = bassEnergy * routing.speed.bass + midEnergy * routing.speed.mid + trebleEnergy * routing.speed.treble;
+        const speedMod = 1 + speedEnergy * 0.8;
+        const vx = this.baseVx * speedMod;
+        const vy = this.baseVy * speedMod;
 
         this.x += vx;
         this.y += vy;
@@ -82,8 +85,10 @@ class Metaball {
     }
 
     draw() {
-        // Color: max of treble continuous warmth and kick pulse flash
-        let t = max(trebleEnergy, this.pulseLevel / 255);
+        // Color: max of routed band energy and kick pulse flash
+        const routing = AppSettings.routing;
+        const colorEnergy = bassEnergy * routing.color.bass + midEnergy * routing.color.mid + trebleEnergy * routing.color.treble;
+        let t = max(colorEnergy, this.pulseLevel / 255);
         let r = lerp(BASE_COLOR[0], PEAK_COLOR[0], t);
         let g = lerp(BASE_COLOR[1], PEAK_COLOR[1], t);
         let b = lerp(BASE_COLOR[2], PEAK_COLOR[2], t);
