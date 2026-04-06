@@ -57,7 +57,9 @@ class Metaball {
         const routing = AppSettings.routing;
         const radiusEnergy = bassEnergy * routing.radius.bass + midEnergy * routing.radius.mid + trebleEnergy * routing.radius.treble;
         this.r = this.rBase * (1 + radiusEnergy * 0.5) + this.kickBurst;
-        this.kickBurst = lerp(this.kickBurst, 0, 0.08);
+        // Frame-rate-independent decay using deltaTime
+        const decay = 1 - Math.exp(-5 * deltaTime / 1000);
+        this.kickBurst = lerp(this.kickBurst, 0, decay);
 
         // Speed: routed band energy modulates around user-set baseline
         const speedEnergy = bassEnergy * routing.speed.bass + midEnergy * routing.speed.mid + trebleEnergy * routing.speed.treble;
@@ -74,8 +76,8 @@ class Metaball {
         if (this.y + this.r >= height) { this.y = height - this.r; this.baseVy *= -1; }
         if (this.y - this.r <= 0)      { this.y = this.r;          this.baseVy *= -1; }
 
-        // Decay kick pulse level (for color flash)
-        this.pulseLevel = max(this.pulseLevel - 10, 0);
+        // Frame-rate-independent pulse decay
+        this.pulseLevel = max(this.pulseLevel - 600 * deltaTime / 1000, 0);
     }
 
     // Kick: set burst and pulse level

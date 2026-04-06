@@ -1,6 +1,9 @@
 // Advanced panel: routing matrix, kick tuning, reactivity, archetype info
+let _archetypeInterval = null;
 
 function setupAdvancedControls(container) {
+    // Clear any existing poll interval (prevents leak on re-init)
+    if (_archetypeInterval) { clearInterval(_archetypeInterval); _archetypeInterval = null; }
     // ── Band Routing (3x3 matrix) ─────────────────────────────────────────
     createDiv('Band Routing').parent(container)
         .style('font-weight', 'bold')
@@ -105,7 +108,7 @@ function setupAdvancedControls(container) {
         .id('adv-archetype-label');
 
     // Poll archetype every ~500ms
-    setInterval(function() {
+    _archetypeInterval = setInterval(function() {
         const el = select('#adv-archetype-label');
         if (!el) return;
         if (typeof lastClassification !== 'undefined' && lastClassification) {

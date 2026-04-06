@@ -72,6 +72,11 @@ function setupBallControls(container) {
         else showTitleDisplay();
     });
 
+    // Register UI sync so applySettings() can update controls
+    registerUISync('ballCount', (val) => { ballCountSlider.value(val); ballCountLabel.html(val); });
+    registerUISync('speed', (val) => { speedSlider.value(val); speedLabel.html(val); });
+    registerUISync('metaMode', (val) => { mergeToggle.checked(val); });
+
     // Set up event handlers
     ballCountSlider.input(() => {
         setBallCount(ballCountSlider.value());

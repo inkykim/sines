@@ -171,6 +171,41 @@ const _setterMap = {
     }
 };
 
+// ── Input validation — clamp values to schema bounds ──────────────────────
+
+function _validateSetting(key, val) {
+    const schema = SETTINGS_SCHEMA.find(function(s) { return s.id === key; });
+    if (!schema) return val;
+
+    if (schema.type === 'int') {
+        val = Math.round(val);
+        if (schema.min !== undefined) val = Math.max(schema.min, val);
+        if (schema.max !== undefined) val = Math.min(schema.max, val);
+    } else if (schema.type === 'float') {
+        if (schema.min !== undefined) val = Math.max(schema.min, val);
+        if (schema.max !== undefined) val = Math.min(schema.max, val);
+    } else if (schema.type === 'color') {
+        if (Array.isArray(val)) {
+            val = val.map(function(v) { return Math.round(Math.max(0, Math.min(255, v))); });
+        }
+    } else if (schema.type === 'bool') {
+        val = !!val;
+    }
+    return val;
+}
+
+// ── UI sync — update DOM controls after programmatic settings change ──────
+
+const _uiSyncMap = {};
+
+function registerUISync(paramId, syncFn) {
+    _uiSyncMap[paramId] = syncFn;
+}
+
+function _syncUI(key, val) {
+    if (_uiSyncMap[key]) _uiSyncMap[key](val);
+}
+
 // ── applySettings(partial) — the main entry point for bulk updates ─────────
 
 function applySettings(partial) {
@@ -185,11 +220,14 @@ function applySettings(partial) {
             continue;
         }
 
+        const val = _validateSetting(key, partial[key]);
+
         if (_setterMap[key]) {
-            _setterMap[key](partial[key]);
+            _setterMap[key](val);
         } else {
-            AppSettings[key] = partial[key];
+            AppSettings[key] = val;
         }
+        _syncUI(key, val);
         themeSetParams.add(key);
         applied.push(key);
     }
