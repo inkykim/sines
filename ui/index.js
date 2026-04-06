@@ -95,12 +95,6 @@ function setupKeyboardControls() {
                 toggleUI();
                 break;
                 
-            case 'KeyI':
-                event.preventDefault();
-                // Toggle title display
-                toggleTitle();
-                break;
-
             case 'KeyD':
                 event.preventDefault();
                 // Toggle debug overlay

@@ -56,6 +56,22 @@ function setupBallControls(uiContainer) {
         .style('height', '18px')
         .style('cursor', 'pointer');
 
+    // Clean display (hide title/instructions)
+    const cleanWrap = createDiv('').parent(uiContainer)
+        .style('display', 'flex')
+        .style('justify-content', 'space-between')
+        .style('align-items', 'center')
+        .style('margin-bottom', '20px');
+    createSpan('Clean Display').parent(cleanWrap);
+    const cleanToggle = createCheckbox('', false).parent(cleanWrap)
+        .style('width', '18px')
+        .style('height', '18px')
+        .style('cursor', 'pointer');
+    cleanToggle.changed(() => {
+        if (cleanToggle.checked()) hideTitleDisplay();
+        else showTitleDisplay();
+    });
+
     // Set up event handlers
     ballCountSlider.input(() => {
         setBallCount(ballCountSlider.value());
