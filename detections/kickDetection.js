@@ -5,7 +5,13 @@ let prevLowSpectrum = [];
 let spectralFluxBuffer = [];
 const fluxBufferSize = 20;
 let lastKickTime = 0;
-const kickCooldown = 200; // ms
+let kickCooldown = 200; // ms — updated via AppSettings
+let kickSensitivityMultiplier = 1.8; // threshold = meanFlux * this
+let kickMinFloor = 15; // minimum flux to count as a kick
+
+// Exposed for debug overlay
+let lastFlux = 0;
+let lastThreshold = 0;
 
 // Spectral flux kick detection for low frequencies
 function kickDetect(spectrum) {
@@ -26,10 +32,12 @@ function kickDetect(spectrum) {
         if (spectralFluxBuffer.length > fluxBufferSize) spectralFluxBuffer.shift();
         
         let meanFlux = spectralFluxBuffer.reduce((a, b) => a + b, 0) / spectralFluxBuffer.length;
-        let threshold = meanFlux * 1.8;
-        
+        let threshold = meanFlux * kickSensitivityMultiplier;
+        lastFlux = flux;
+        lastThreshold = threshold;
+
         let now = millis();
-        if (flux > threshold && flux > 15 && now - lastKickTime > kickCooldown) {
+        if (flux > threshold && flux > kickMinFloor && now - lastKickTime > kickCooldown) {
             kickDetected = true;
             lastKickTime = now;
         }

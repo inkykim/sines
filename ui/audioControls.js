@@ -17,14 +17,14 @@ function handleAudioFile(file) {
         // stop any currently playing track
         const prev = getActiveSound();
         if (prev.isPlaying()) prev.stop();
-    
+
         currentTrack = snd;
         fft.setInput(currentTrack);          // route FFT to new track
-    
+
         // auto-play the new track in a loop
         userStartAudio();
         currentTrack.loop();
-    
+
         // update label
         trackNameText.html(`${file.name}`);
     }, (err) => {
@@ -32,16 +32,9 @@ function handleAudioFile(file) {
     });
 }
 
-function setupAudioControls() {
-    // Audio section title
-    createDiv('Audio Controls')
-        .parent(uiContainer)
-        .style('font-weight', 'bold')
-        .style('margin', '0 0 10px 0')
-        .style('color', '#ccc');
-
+function setupAudioControls(container) {
     // File input
-    const fileWrap = createDiv('').parent(uiContainer)
+    const fileWrap = createDiv('').parent(container);
     fileInput = createFileInput(handleAudioFile, false).parent(fileWrap)
         .style('width', '90%')
         .style('color', '#fff')
@@ -50,14 +43,14 @@ function setupAudioControls() {
         .style('padding', '6px');
 
     // Track name display
-    trackNameText = createDiv('Default: pilsplaat.wav').parent(uiContainer)
+    trackNameText = createDiv('Default: pilsplaat.wav').parent(container)
         .style('margin-bottom', '12px')
         .style('font-size', '11px')
         .style('color', '#aaa')
         .style('font-style', 'italic');
 
     // Control buttons
-    const buttonWrap = createDiv('').parent(uiContainer)
+    const buttonWrap = createDiv('').parent(container)
         .style('display', 'flex')
         .style('gap', '8px')
         .style('margin-bottom', '20px');
