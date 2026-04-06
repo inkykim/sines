@@ -1,8 +1,8 @@
 // Ball display and animation functions
 let balls = [];
 let NUM_BALLS = 10;
-const R_MIN = 60;
-const R_MAX = 180;
+const R_MIN = 30;
+const R_MAX = 90;
 
 let BASE_COLOR = [0, 0, 0];
 let PEAK_COLOR = [255, 255, 255];
@@ -35,45 +35,55 @@ function setBallCount(n) {
 function setSpeed(s) {
     s = int(constrain(s, 1, 10));
     for (const ball of balls) {
-        ball.vx = (ball.vx > 0 ? 1 : -1) * s;
-        ball.vy = (ball.vy > 0 ? 1 : -1) * s;
+        ball.baseVx = (ball.baseVx > 0 ? 1 : -1) * s;
+        ball.baseVy = (ball.baseVy > 0 ? 1 : -1) * s;
     }
 }
 
 class Metaball {
-    constructor(x, y, r) {
+    constructor(x, y) {
         this.x = x;
         this.y = y;
         this.rBase = random(R_MIN, R_MAX);
         this.r = this.rBase;
-        this.vx = random(-4, 4);
-        this.vy = random(-4, 4);
-        this.pulseLevel = 0;
+        this.baseVx = random(-4, 4);
+        this.baseVy = random(-4, 4);
+        this.kickBurst = 0;
+        this.pulseLevel = 0; // kick-only, drives color flash
     }
 
-    update() { // update position, handle bouncing and pulsing
-        this.x += this.vx;
-        this.y += this.vy;
+    update() {
+        // Radius: continuous bass scaling + decaying kick burst
+        this.r = this.rBase * (1 + bassEnergy * 0.5) + this.kickBurst;
+        this.kickBurst = lerp(this.kickBurst, 0, 0.08);
+
+        // Speed: mid energy modulates around user-set baseline
+        const midMod = 1 + midEnergy * 0.8;
+        const vx = this.baseVx * midMod;
+        const vy = this.baseVy * midMod;
+
+        this.x += vx;
+        this.y += vy;
 
         // bounce off walls
-        if (this.x + this.r >= width)  { this.x = width - this.r;  this.vx *= -1; }
-        if (this.x - this.r <= 0)      { this.x = this.r;          this.vx *= -1; }
-        if (this.y + this.r >= height) { this.y = height - this.r; this.vy *= -1; }
-        if (this.y - this.r <= 0)      { this.y = this.r;          this.vy *= -1; }
+        if (this.x + this.r >= width)  { this.x = width - this.r;  this.baseVx *= -1; }
+        if (this.x - this.r <= 0)      { this.x = this.r;          this.baseVx *= -1; }
+        if (this.y + this.r >= height) { this.y = height - this.r; this.baseVy *= -1; }
+        if (this.y - this.r <= 0)      { this.y = this.r;          this.baseVy *= -1; }
 
-        // fade back from pulse
-        this.r = lerp(this.r, this.rBase, 0.08);
+        // Decay kick pulse level (for color flash)
         this.pulseLevel = max(this.pulseLevel - 10, 0);
     }
 
-    // set brightness to max for pulse effect, slightly increase radius
-    pulse(amount = 10) {
-        this.r = min(this.r + amount, this.rBase * 1.8);
+    // Kick: set burst and pulse level
+    pulse(amount) {
+        this.kickBurst = this.rBase * 0.8;
         this.pulseLevel = 255;
     }
 
     draw() {
-        let t = this.pulseLevel / 255;
+        // Color: max of treble continuous warmth and kick pulse flash
+        let t = max(trebleEnergy, this.pulseLevel / 255);
         let r = lerp(BASE_COLOR[0], PEAK_COLOR[0], t);
         let g = lerp(BASE_COLOR[1], PEAK_COLOR[1], t);
         let b = lerp(BASE_COLOR[2], PEAK_COLOR[2], t);
@@ -100,6 +110,7 @@ function updateBall() {
 // start pulse effect on all balls
 function onEventDetected() {
     for (const ball of balls) ball.pulse();
+    if (typeof triggerKickFlash === 'function') triggerKickFlash();
 }
 
 // draw the balls

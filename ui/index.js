@@ -100,6 +100,12 @@ function setupKeyboardControls() {
                 // Toggle title display
                 toggleTitle();
                 break;
+
+            case 'KeyD':
+                event.preventDefault();
+                // Toggle debug overlay
+                toggleDebugMode();
+                break;
         }
     });
 }

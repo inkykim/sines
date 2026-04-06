@@ -32,7 +32,7 @@ function setupTitleDisplay() {
         .style('-moz-osx-font-smoothing', 'unset');
 
     // Instructions text
-    instructionsText = createDiv('spacebar: play/pause, e: customize, i: hide text')
+    instructionsText = createDiv('spacebar: play/pause, e: customize')
         .parent(titleContainer)
         .style('font-family', 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif')
         .style('font-size', '14px')
