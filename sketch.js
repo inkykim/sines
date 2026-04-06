@@ -1,11 +1,14 @@
-let pilsplaat, dawg, fft;
+let pilsplaat, fft;
+let audioLoadError = false;
 
 // Band energy globals (0-1, updated each frame, noise-floor filtered)
 let bassEnergy = 0, midEnergy = 0, trebleEnergy = 0;
 
 function preload() {
-    pilsplaat = loadSound('assets/pilsplaat.wav');
-    dawg = loadImage('assets/dog.jpg');
+    pilsplaat = loadSound('assets/pilsplaat.wav',
+        function() { /* success */ },
+        function(err) { console.error('Failed to load default audio:', err); audioLoadError = true; }
+    );
 }
 
 function setup() {
@@ -32,6 +35,18 @@ function applyNoiseFloor(raw) {
 function draw() {
     const bgColor = getBackgroundColor();
     background(bgColor[0], bgColor[1], bgColor[2]);
+
+    // Show error overlay if audio failed to load
+    if (audioLoadError) {
+        push();
+        fill(255, 80, 80);
+        noStroke();
+        textAlign(CENTER, CENTER);
+        textSize(16);
+        text('Audio failed to load. Try uploading a file.', width / 2, height / 2);
+        pop();
+    }
+
     let spectrum = fft.analyze();
 
     // Extract band energies with noise floor

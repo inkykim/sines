@@ -64,6 +64,11 @@ function setupColorControls(container) {
         .style('cursor', 'pointer');
     bgColorLockPin = createLockPin(bgRight, 'bgColor');
 
+    // Register UI sync so applySettings() can update pickers
+    registerUISync('baseColor', (val) => basePicker.value(_rgbToHex(val)));
+    registerUISync('peakColor', (val) => peakPicker.value(_rgbToHex(val)));
+    registerUISync('bgColor', (val) => bgPicker.value(_rgbToHex(val)));
+
     // Set up color picker event handlers
     basePicker.input(() => {
         setBaseColorFromHex(basePicker.value());
