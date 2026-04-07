@@ -16,7 +16,7 @@ function setupAdvancedControls(container) {
         .style('align-items', 'center')
         .style('margin-bottom', '2px');
     createDiv('').parent(headerRow).style('width', '50px'); // spacer for row label
-    const colLabels = ['Radius', 'Speed', 'Color', 'Gradient', 'Fringe'];
+    const colLabels = ['Radius', 'Speed', 'Color', 'Gradient'];
     for (const label of colLabels) {
         createDiv(label).parent(headerRow)
             .style('width', '60px')
@@ -26,7 +26,7 @@ function setupAdvancedControls(container) {
     }
 
     const bands = ['bass', 'mid', 'treble'];
-    const params = ['radius', 'speed', 'color', 'gradient', 'fringe'];
+    const params = ['radius', 'speed', 'color', 'gradient'];
     const bandLabels = { bass: 'Bass', mid: 'Mid', treble: 'Treble' };
 
     for (const band of bands) {

@@ -1,39 +1,10 @@
-// Gradient palette and fringe controls
+// Gradient palette controls
 let _paletteContainer = null;
-let _fringeSlider = null;
 
 function setupGradientControls(container) {
-    // ── Fringe Intensity ─────────────────────────────────────────────────
-    createDiv('Fringe Intensity').parent(container)
-        .style('color', '#ccc')
-        .style('margin-bottom', '6px');
-
-    const fringeRow = createDiv('').parent(container)
-        .style('display', 'flex')
-        .style('align-items', 'center')
-        .style('margin-bottom', '12px');
-
-    _fringeSlider = createSlider(0, 1, AppSettings.fringeIntensity, 0.05).parent(fringeRow)
-        .style('width', '160px')
-        .style('accent-color', '#888');
-
-    const fringeLabel = createDiv(String(AppSettings.fringeIntensity)).parent(fringeRow)
-        .style('width', '40px')
-        .style('text-align', 'right')
-        .style('color', '#999')
-        .style('font-size', '11px')
-        .style('margin-left', '8px');
-
-    _fringeSlider.input(function() {
-        const v = parseFloat(this.value());
-        fringeLabel.html(v.toFixed(2));
-        AppSettings.fringeIntensity = v;
-    });
-
     // ── Palette Stops ────────────────────────────────────────────────────
     createDiv('Gradient Palette').parent(container)
         .style('color', '#ccc')
-        .style('margin-top', '8px')
         .style('margin-bottom', '6px');
 
     _paletteContainer = createDiv('').parent(container);
@@ -67,10 +38,6 @@ function setupGradientControls(container) {
     });
 
     // Register UI sync for applySettings()
-    registerUISync('fringeIntensity', function(val) {
-        _fringeSlider.value(val);
-        fringeLabel.html(val.toFixed(2));
-    });
     registerUISync('palette', function() {
         _renderPaletteStops();
     });

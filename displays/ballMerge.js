@@ -1,6 +1,6 @@
 // ballMerge.js
 // Gradient field renderer — maps the continuous metaball scalar field
-// to a multi-stop color gradient via pixel buffer, with interference fringes.
+// to a multi-stop color gradient via pixel buffer.
 
 // --- configurable field parameters ---
 const FIELD_STEP = 4;        // grid spacing in pixels (smaller = smoother, slower)
@@ -11,9 +11,6 @@ let _gradientImg = null;
 let _gradientCols = 0;
 let _gradientRows = 0;
 
-// Fringe animation constants
-const FRINGE_BASE_FREQ = 8.0;   // base frequency for sin() fringe pattern
-const FRINGE_BASE_SPEED = 0.03; // base animation speed
 
 // Scalar field: sum of r_i^2 / dist^2
 function fieldValueAt(px, py) {
@@ -56,18 +53,8 @@ function drawGradientField() {
     const gradientEnergy = bassEnergy * routing.gradient.bass +
                            midEnergy * routing.gradient.mid +
                            trebleEnergy * routing.gradient.treble;
-    const fringeEnergy = bassEnergy * routing.fringe.bass +
-                         midEnergy * routing.fringe.mid +
-                         trebleEnergy * routing.fringe.treble;
-
     // Gradient energy modulates the normalization — higher energy = wider gradient spread
     const normFactor = FIELD_NORM / (1 + gradientEnergy * 1.5);
-
-    // Fringe parameters
-    const fringeIntensity = AppSettings.fringeIntensity;
-    const fringeFreq = FRINGE_BASE_FREQ * (1 + fringeEnergy * 3);
-    const fringeSpeed = FRINGE_BASE_SPEED * (1 + fringeEnergy * 2);
-    const fringeTime = frameCount * fringeSpeed;
 
     _gradientImg.loadPixels();
     const pixels = _gradientImg.pixels;
@@ -89,16 +76,6 @@ function drawGradientField() {
             let r = lut[lutIndex * 4];
             let g = lut[lutIndex * 4 + 1];
             let b = lut[lutIndex * 4 + 2];
-
-            // Apply interference fringes
-            if (fringeIntensity > 0 && normalized > 0.01) {
-                const fringe = Math.sin(fieldVal * fringeFreq + fringeTime);
-                // Fringe modulates brightness: [-1,1] -> [1-intensity, 1+intensity]
-                const fringeMod = 1 + fringe * fringeIntensity * 0.5;
-                r = Math.min(255, Math.max(0, r * fringeMod));
-                g = Math.min(255, Math.max(0, g * fringeMod));
-                b = Math.min(255, Math.max(0, b * fringeMod));
-            }
 
             const idx = (row * cols + col) * 4;
             pixels[idx]     = r;

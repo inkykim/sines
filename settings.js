@@ -62,7 +62,6 @@ const SETTINGS_SCHEMA = [
     { id: 'kickCooldown',     type: 'int',     label: 'Kick Cooldown (ms)', min: 50, max: 1000, default: 200 },
     { id: 'kickFloor',        type: 'float',   label: 'Kick Floor',         min: 0, max: 100, default: 15 },
     { id: 'reactivity',       type: 'float',   label: 'Reactivity',         min: 0.1, max: 5, default: 1.0 },
-    { id: 'fringeIntensity',  type: 'float',   label: 'Fringe Intensity',   min: 0, max: 1, default: 0.4 },
     { id: 'palette',          type: 'palette', label: 'Gradient Palette',   default: [
         { position: 0,    color: [5, 2, 18] },
         { position: 0.35, color: [20, 60, 120] },
@@ -74,7 +73,7 @@ const SETTINGS_SCHEMA = [
         speed:    { bass: 0, mid: 1, treble: 0 },
         color:    { bass: 0, mid: 0, treble: 1 },
         gradient: { bass: 0.5, mid: 0.3, treble: 0.2 },
-        fringe:   { bass: 0, mid: 0.3, treble: 1 }
+
     }}
 ];
 
@@ -92,7 +91,6 @@ const AppSettings = {
     kickCooldown:    200,
     kickFloor:       15,
     reactivity:      1.0,
-    fringeIntensity: 0.4,
     palette: [
         { position: 0,    color: [5, 2, 18] },
         { position: 0.35, color: [20, 60, 120] },
@@ -104,7 +102,7 @@ const AppSettings = {
         speed:    { bass: 0, mid: 1, treble: 0 },
         color:    { bass: 0, mid: 0, treble: 1 },
         gradient: { bass: 0.5, mid: 0.3, treble: 0.2 },
-        fringe:   { bass: 0, mid: 0.3, treble: 1 }
+
     }
 };
 
@@ -192,9 +190,6 @@ const _setterMap = {
     reactivity: function(val) {
         AppSettings.reactivity = val;
         // reactivity is read directly from AppSettings in applyNoiseFloor()
-    },
-    fringeIntensity: function(val) {
-        AppSettings.fringeIntensity = val;
     },
     palette: function(val) {
         AppSettings.palette = JSON.parse(JSON.stringify(val));
