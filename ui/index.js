@@ -123,6 +123,9 @@ function setupUI() {
     const colorSection = createCollapsibleSection(uiContainer, 'Colors', true);
     setupColorControls(colorSection);
 
+    const gradientSection = createCollapsibleSection(uiContainer, 'Gradient', true);
+    setupGradientControls(gradientSection);
+
     const ballSection = createCollapsibleSection(uiContainer, 'Ball Settings', false);
     setupBallControls(ballSection);
 
