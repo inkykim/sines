@@ -3,7 +3,7 @@ let uiVisible = false;
 
 // Lock pin references for auto-lock UI updates
 let baseColorLockPin, peakColorLockPin, bgColorLockPin;
-let ballCountLockPin, speedLockPin, metaModeLockPin;
+let ballCountLockPin, speedLockPin;
 
 function createCollapsibleSection(parent, title, defaultExpanded) {
     const section = createDiv('').parent(parent).style('margin-bottom', '16px');

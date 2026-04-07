@@ -10,8 +10,8 @@ const ARCHETYPES = [
         profile: { bassMean: 0.6, midMean: 0.3, trebleMean: 0.2, centroidMean: 0.15, kickRate: 0.15, bassVariance: 0.04 },
         theme: {
             baseColor: [10, 0, 20], peakColor: [180, 0, 255], bgColor: [0, 0, 0],
-            ballCount: 10, speed: 7, metaMode: true,
-            routing: { radius: {bass:1,mid:0,treble:0}, speed: {bass:0.3,mid:1,treble:0}, color: {bass:0,mid:0,treble:1} },
+            ballCount: 10, speed: 7, fringeIntensity: 0.5,
+            routing: { radius: {bass:1,mid:0,treble:0}, speed: {bass:0.3,mid:1,treble:0}, color: {bass:0,mid:0,treble:1}, gradient: {bass:1,mid:0,treble:0}, fringe: {bass:0,mid:0.3,treble:1} },
             kickSensitivity: 1.5
         }
     },
@@ -20,8 +20,8 @@ const ARCHETYPES = [
         profile: { bassMean: 0.4, midMean: 0.5, trebleMean: 0.5, centroidMean: 0.55, kickRate: 0.1, bassVariance: 0.02 },
         theme: {
             baseColor: [255, 200, 50], peakColor: [255, 100, 150], bgColor: [255, 250, 240],
-            ballCount: 7, speed: 5, metaMode: true,
-            routing: { radius: {bass:1,mid:0.3,treble:0}, speed: {bass:0,mid:1,treble:0.3}, color: {bass:0,mid:0.3,treble:1} },
+            ballCount: 7, speed: 5, fringeIntensity: 0.3,
+            routing: { radius: {bass:1,mid:0.3,treble:0}, speed: {bass:0,mid:1,treble:0.3}, color: {bass:0,mid:0.3,treble:1}, gradient: {bass:0.5,mid:0.5,treble:0}, fringe: {bass:0,mid:0.5,treble:1} },
             kickSensitivity: 1.8
         }
     },
@@ -30,8 +30,8 @@ const ARCHETYPES = [
         profile: { bassMean: 0.15, midMean: 0.25, trebleMean: 0.3, centroidMean: 0.6, kickRate: 0.01, bassVariance: 0.005 },
         theme: {
             baseColor: [180, 170, 150], peakColor: [220, 200, 160], bgColor: [240, 235, 220],
-            ballCount: 2, speed: 2, metaMode: false,
-            routing: { radius: {bass:0.5,mid:0.5,treble:0}, speed: {bass:0,mid:0.5,treble:0.5}, color: {bass:0,mid:1,treble:0.5} },
+            ballCount: 2, speed: 2, fringeIntensity: 0.1,
+            routing: { radius: {bass:0.5,mid:0.5,treble:0}, speed: {bass:0,mid:0.5,treble:0.5}, color: {bass:0,mid:1,treble:0.5}, gradient: {bass:0.3,mid:0.5,treble:0.3}, fringe: {bass:0,mid:0.5,treble:0.5} },
             kickSensitivity: 2.5
         }
     },
@@ -40,8 +40,8 @@ const ARCHETYPES = [
         profile: { bassMean: 0.7, midMean: 0.6, trebleMean: 0.5, centroidMean: 0.35, kickRate: 0.12, bassVariance: 0.06 },
         theme: {
             baseColor: [80, 0, 0], peakColor: [255, 255, 255], bgColor: [15, 0, 0],
-            ballCount: 14, speed: 8, metaMode: true,
-            routing: { radius: {bass:1,mid:0.5,treble:0}, speed: {bass:0.5,mid:1,treble:0.3}, color: {bass:0.3,mid:0,treble:1} },
+            ballCount: 14, speed: 8, fringeIntensity: 0.6,
+            routing: { radius: {bass:1,mid:0.5,treble:0}, speed: {bass:0.5,mid:1,treble:0.3}, color: {bass:0.3,mid:0,treble:1}, gradient: {bass:1,mid:0.3,treble:0}, fringe: {bass:0,mid:0,treble:1} },
             kickSensitivity: 1.3
         }
     },
@@ -50,8 +50,8 @@ const ARCHETYPES = [
         profile: { bassMean: 0.2, midMean: 0.2, trebleMean: 0.25, centroidMean: 0.45, kickRate: 0.005, bassVariance: 0.003 },
         theme: {
             baseColor: [0, 40, 60], peakColor: [0, 180, 200], bgColor: [5, 10, 25],
-            ballCount: 3, speed: 1, metaMode: true,
-            routing: { radius: {bass:0.5,mid:0.5,treble:0.3}, speed: {bass:0,mid:0.3,treble:0.5}, color: {bass:0.3,mid:0.5,treble:1} },
+            ballCount: 3, speed: 1, fringeIntensity: 0.3,
+            routing: { radius: {bass:0.5,mid:0.5,treble:0.3}, speed: {bass:0,mid:0.3,treble:0.5}, color: {bass:0.3,mid:0.5,treble:1}, gradient: {bass:0.3,mid:0.5,treble:0.5}, fringe: {bass:0,mid:0.5,treble:1} },
             kickSensitivity: 2.5
         }
     },
@@ -60,8 +60,8 @@ const ARCHETYPES = [
         profile: { bassMean: 0.35, midMean: 0.3, trebleMean: 0.2, centroidMean: 0.35, kickRate: 0.04, bassVariance: 0.01 },
         theme: {
             baseColor: [120, 80, 50], peakColor: [220, 180, 140], bgColor: [40, 25, 15],
-            ballCount: 5, speed: 3, metaMode: false,
-            routing: { radius: {bass:1,mid:0.3,treble:0}, speed: {bass:0,mid:1,treble:0}, color: {bass:0,mid:0.5,treble:1} },
+            ballCount: 5, speed: 3, fringeIntensity: 0.2,
+            routing: { radius: {bass:1,mid:0.3,treble:0}, speed: {bass:0,mid:1,treble:0}, color: {bass:0,mid:0.5,treble:1}, gradient: {bass:0.5,mid:0.5,treble:0}, fringe: {bass:0,mid:0.7,treble:0.5} },
             kickSensitivity: 2.0
         }
     },
@@ -70,8 +70,8 @@ const ARCHETYPES = [
         profile: { bassMean: 0.55, midMean: 0.35, trebleMean: 0.4, centroidMean: 0.4, kickRate: 0.18, bassVariance: 0.015 },
         theme: {
             baseColor: [0, 30, 10], peakColor: [0, 255, 180], bgColor: [0, 0, 0],
-            ballCount: 9, speed: 6, metaMode: true,
-            routing: { radius: {bass:1,mid:0,treble:0}, speed: {bass:0,mid:1,treble:0.5}, color: {bass:0,mid:0,treble:1} },
+            ballCount: 9, speed: 6, fringeIntensity: 0.5,
+            routing: { radius: {bass:1,mid:0,treble:0}, speed: {bass:0,mid:1,treble:0.5}, color: {bass:0,mid:0,treble:1}, gradient: {bass:1,mid:0,treble:0}, fringe: {bass:0,mid:0,treble:1} },
             kickSensitivity: 1.4
         }
     },
@@ -80,8 +80,8 @@ const ARCHETYPES = [
         profile: { bassMean: 0.3, midMean: 0.45, trebleMean: 0.35, centroidMean: 0.55, kickRate: 0.03, bassVariance: 0.02 },
         theme: {
             baseColor: [60, 40, 10], peakColor: [220, 180, 60], bgColor: [20, 15, 5],
-            ballCount: 4, speed: 3, metaMode: false,
-            routing: { radius: {bass:0.7,mid:0.5,treble:0}, speed: {bass:0,mid:1,treble:0.3}, color: {bass:0,mid:0.7,treble:1} },
+            ballCount: 4, speed: 3, fringeIntensity: 0.15,
+            routing: { radius: {bass:0.7,mid:0.5,treble:0}, speed: {bass:0,mid:1,treble:0.3}, color: {bass:0,mid:0.7,treble:1}, gradient: {bass:0.5,mid:0.5,treble:0}, fringe: {bass:0,mid:0.5,treble:0.5} },
             kickSensitivity: 2.2
         }
     }

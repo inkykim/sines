@@ -16,17 +16,17 @@ function setupAdvancedControls(container) {
         .style('align-items', 'center')
         .style('margin-bottom', '2px');
     createDiv('').parent(headerRow).style('width', '50px'); // spacer for row label
-    const colLabels = ['Radius', 'Speed', 'Color'];
+    const colLabels = ['Radius', 'Speed', 'Color', 'Gradient', 'Fringe'];
     for (const label of colLabels) {
         createDiv(label).parent(headerRow)
-            .style('width', '70px')
+            .style('width', '60px')
             .style('text-align', 'center')
             .style('color', '#999')
             .style('font-size', '10px');
     }
 
     const bands = ['bass', 'mid', 'treble'];
-    const params = ['radius', 'speed', 'color'];
+    const params = ['radius', 'speed', 'color', 'gradient', 'fringe'];
     const bandLabels = { bass: 'Bass', mid: 'Mid', treble: 'Treble' };
 
     for (const band of bands) {
@@ -42,11 +42,11 @@ function setupAdvancedControls(container) {
 
         for (const param of params) {
             const cell = createDiv('').parent(row)
-                .style('width', '70px')
+                .style('width', '60px')
                 .style('text-align', 'center');
 
             const slider = createSlider(0, 1, AppSettings.routing[param][band], 0.1).parent(cell)
-                .style('width', '60px')
+                .style('width', '50px')
                 .style('accent-color', '#888');
 
             // Capture current param/band in closure

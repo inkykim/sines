@@ -1,6 +1,5 @@
 let ballCountSlider, ballCountLabel;
 let speedSlider, speedLabel;
-let mergeToggle;
 
 function setupBallControls(container) {
     // Ball count
@@ -39,23 +38,6 @@ function setupBallControls(container) {
         .style('text-align', 'center');
     speedLockPin = createLockPin(speedControls, 'speed');
 
-    // Meta mode
-    const mergeWrap = createDiv('').parent(container)
-        .style('display', 'flex')
-        .style('justify-content', 'space-between')
-        .style('align-items', 'center')
-        .style('margin-bottom', '20px');
-    createSpan('Meta Mode').parent(mergeWrap);
-    const mergeRight = createDiv('').parent(mergeWrap)
-        .style('display', 'flex')
-        .style('align-items', 'center')
-        .style('gap', '4px');
-    mergeToggle = createCheckbox('', USE_METAMERGE).parent(mergeRight)
-        .style('width', '18px')
-        .style('height', '18px')
-        .style('cursor', 'pointer');
-    metaModeLockPin = createLockPin(mergeRight, 'metaMode');
-
     // Clean display (hide title/instructions)
     const cleanWrap = createDiv('').parent(container)
         .style('display', 'flex')
@@ -75,8 +57,6 @@ function setupBallControls(container) {
     // Register UI sync so applySettings() can update controls
     registerUISync('ballCount', (val) => { ballCountSlider.value(val); ballCountLabel.html(val); });
     registerUISync('speed', (val) => { speedSlider.value(val); speedLabel.html(val); });
-    registerUISync('metaMode', (val) => { mergeToggle.checked(val); });
-
     // Set up event handlers
     ballCountSlider.input(() => {
         setBallCount(ballCountSlider.value());
@@ -92,13 +72,6 @@ function setupBallControls(container) {
         if (themeSetParams.has('speed')) {
             lockParam('speed');
             updateLockPinUI(speedLockPin, 'speed');
-        }
-    });
-    mergeToggle.changed(() => {
-        USE_METAMERGE = mergeToggle.checked();
-        if (themeSetParams.has('metaMode')) {
-            lockParam('metaMode');
-            updateLockPinUI(metaModeLockPin, 'metaMode');
         }
     });
 }
