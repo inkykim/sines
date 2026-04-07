@@ -1,30 +1,21 @@
 // ballMerge.js
-// Handles "merge" rendering so balls look like one blob (metaball style)
+// Gradient field renderer — maps the continuous metaball scalar field
+// to a multi-stop color gradient via pixel buffer, with interference fringes.
 
 // --- configurable field parameters ---
 const FIELD_STEP = 8;        // grid spacing in pixels (larger = faster, blockier)
-const FIELD_THRESHOLD = 1.9; // metaball threshold; tweak to taste
-let USE_METAMERGE = true;    // toggle: merged blob vs. individual circles
+const FIELD_NORM = 4.0;      // normalization divisor: fieldValue / FIELD_NORM maps to [0,1] for LUT
 
-// Scene-wide color: max of treble continuous warmth and kick pulse flash
-function getScenePulseT() {
-    if (balls.length === 0) return 0;
-    let m = 0;
-    for (const b of balls) if (b.pulseLevel > m) m = b.pulseLevel;
-    const routing = AppSettings.routing;
-    const colorEnergy = bassEnergy * routing.color.bass + midEnergy * routing.color.mid + trebleEnergy * routing.color.treble;
-    return max(colorEnergy, m / 255);
-}
+// Cached pixel buffer for the gradient field
+let _gradientImg = null;
+let _gradientCols = 0;
+let _gradientRows = 0;
 
-function getSceneColorRGB() {
-    const t = getScenePulseT();
-    const r = lerp(BASE_COLOR[0], PEAK_COLOR[0], t);
-    const g = lerp(BASE_COLOR[1], PEAK_COLOR[1], t);
-    const b = lerp(BASE_COLOR[2], PEAK_COLOR[2], t);
-    return [r, g, b];
-}
+// Fringe animation constants
+const FRINGE_BASE_FREQ = 8.0;   // base frequency for sin() fringe pattern
+const FRINGE_BASE_SPEED = 0.03; // base animation speed
 
-// Scalar field Σ r_i^2 / dist^2
+// Scalar field: sum of r_i^2 / dist^2
 function fieldValueAt(px, py) {
     let sum = 0;
     for (const b of balls) {
@@ -36,251 +27,94 @@ function fieldValueAt(px, py) {
     return sum;
 }
 
-// Linear interpolation along an edge to find where field crosses threshold
-// v0, v1: field values at the two endpoints
-// p0, p1: [x,y] coordinates of the two endpoints
-function interpEdge(v0, v1, p0x, p0y, p1x, p1y) {
-    const t = (FIELD_THRESHOLD - v0) / (v1 - v0);
-    return [
-        p0x + t * (p1x - p0x),
-        p0y + t * (p1y - p0y)
-    ];
-}
-
-// Marching squares edge lookup table
-// Bit ordering: bit0=TL(v0), bit1=TR(v1), bit2=BR(v2), bit3=BL(v3)
-// Edges: top=0(TL-TR), right=1(TR-BR), bottom=2(BR-BL), left=3(BL-TL)
-// Each case maps to a list of triangle fans (arrays of edge indices or corner indices)
-// We use a polygon-based approach: for each case, list the vertices (corners + edge crossings)
-// that form the filled region, in order.
-
-// Draw merged solid blob using marching squares (all 16 cases)
-function drawMergedBlob() {
-    const [cr, cg, cb] = getSceneColorRGB();
-    noStroke();
-    fill(cr, cg, cb, 255);
-
+// Ensure pixel buffer matches current canvas dimensions
+function _ensureGradientBuffer() {
     const cols = Math.ceil(width / FIELD_STEP) + 1;
     const rows = Math.ceil(height / FIELD_STEP) + 1;
+    if (!_gradientImg || cols !== _gradientCols || rows !== _gradientRows) {
+        _gradientImg = createImage(cols, rows);
+        _gradientCols = cols;
+        _gradientRows = rows;
+    }
+}
 
-    // Cache field values in a 2D grid
-    const grid = new Array(rows);
+// Draw the gradient field using pixel buffer
+function drawGradientField() {
+    if (balls.length === 0) return;
+
+    // Ensure LUT exists
+    if (!gradientLUT) rebuildGradientLUT();
+
+    _ensureGradientBuffer();
+
+    const cols = _gradientCols;
+    const rows = _gradientRows;
+    const lut = gradientLUT;
+
+    // Audio-reactive modulation via routing matrix
+    const routing = AppSettings.routing;
+    const gradientEnergy = bassEnergy * routing.gradient.bass +
+                           midEnergy * routing.gradient.mid +
+                           trebleEnergy * routing.gradient.treble;
+    const fringeEnergy = bassEnergy * routing.fringe.bass +
+                         midEnergy * routing.fringe.mid +
+                         trebleEnergy * routing.fringe.treble;
+
+    // Gradient energy modulates the normalization — higher energy = wider gradient spread
+    const normFactor = FIELD_NORM / (1 + gradientEnergy * 1.5);
+
+    // Fringe parameters
+    const fringeIntensity = AppSettings.fringeIntensity;
+    const fringeFreq = FRINGE_BASE_FREQ * (1 + fringeEnergy * 3);
+    const fringeSpeed = FRINGE_BASE_SPEED * (1 + fringeEnergy * 2);
+    const fringeTime = frameCount * fringeSpeed;
+
+    _gradientImg.loadPixels();
+    const pixels = _gradientImg.pixels;
+
     for (let row = 0; row < rows; row++) {
-        grid[row] = new Float32Array(cols);
         const py = row * FIELD_STEP;
         for (let col = 0; col < cols; col++) {
-            grid[row][col] = fieldValueAt(col * FIELD_STEP, py);
+            const px = col * FIELD_STEP;
+
+            // Compute scalar field value
+            const fieldVal = fieldValueAt(px, py);
+
+            // Normalize to [0, 1] and map to LUT index [0, 255]
+            const normalized = Math.min(fieldVal / normFactor, 1);
+            let lutIndex = Math.floor(normalized * 255);
+            if (lutIndex > 255) lutIndex = 255;
+
+            // Base color from LUT
+            let r = lut[lutIndex * 4];
+            let g = lut[lutIndex * 4 + 1];
+            let b = lut[lutIndex * 4 + 2];
+
+            // Apply interference fringes
+            if (fringeIntensity > 0 && normalized > 0.01) {
+                const fringe = Math.sin(fieldVal * fringeFreq + fringeTime);
+                // Fringe modulates brightness: [-1,1] -> [1-intensity, 1+intensity]
+                const fringeMod = 1 + fringe * fringeIntensity * 0.5;
+                r = Math.min(255, Math.max(0, r * fringeMod));
+                g = Math.min(255, Math.max(0, g * fringeMod));
+                b = Math.min(255, Math.max(0, b * fringeMod));
+            }
+
+            const idx = (row * cols + col) * 4;
+            pixels[idx]     = r;
+            pixels[idx + 1] = g;
+            pixels[idx + 2] = b;
+            pixels[idx + 3] = 255;
         }
     }
 
-    const T = FIELD_THRESHOLD;
+    _gradientImg.updatePixels();
 
-    for (let row = 0; row < rows - 1; row++) {
-        for (let col = 0; col < cols - 1; col++) {
-            const x = col * FIELD_STEP;
-            const y = row * FIELD_STEP;
-            const s = FIELD_STEP;
+    // Upscale to full canvas — browser uses bilinear interpolation
+    image(_gradientImg, 0, 0, width, height);
+}
 
-            // Corner values: TL=v0, TR=v1, BR=v2, BL=v3
-            const v0 = grid[row][col];         // TL
-            const v1 = grid[row][col + 1];     // TR
-            const v2 = grid[row + 1][col + 1]; // BR
-            const v3 = grid[row + 1][col];     // BL
-
-            // Bit field: bit0=TL, bit1=TR, bit2=BR, bit3=BL
-            const inside = (v0 >= T ? 1 : 0) |
-                           (v1 >= T ? 2 : 0) |
-                           (v2 >= T ? 4 : 0) |
-                           (v3 >= T ? 8 : 0);
-
-            if (inside === 0) continue;  // all outside
-            if (inside === 15) {
-                // all inside — fill entire cell
-                beginShape();
-                vertex(x, y);
-                vertex(x + s, y);
-                vertex(x + s, y + s);
-                vertex(x, y + s);
-                endShape(CLOSE);
-                continue;
-            }
-
-            // Edge interpolation points (computed on demand)
-            // Top edge: between TL and TR
-            let eTop, eRight, eBottom, eLeft;
-
-            // Case-by-case rendering
-            // Using the polygon approach: trace the boundary of the "inside" region
-            switch (inside) {
-                case 1: { // only TL inside
-                    eTop = interpEdge(v0, v1, x, y, x + s, y);
-                    eLeft = interpEdge(v0, v3, x, y, x, y + s);
-                    beginShape();
-                    vertex(x, y);
-                    vertex(eTop[0], eTop[1]);
-                    vertex(eLeft[0], eLeft[1]);
-                    endShape(CLOSE);
-                    break;
-                }
-                case 2: { // only TR inside
-                    eTop = interpEdge(v0, v1, x, y, x + s, y);
-                    eRight = interpEdge(v1, v2, x + s, y, x + s, y + s);
-                    beginShape();
-                    vertex(eTop[0], eTop[1]);
-                    vertex(x + s, y);
-                    vertex(eRight[0], eRight[1]);
-                    endShape(CLOSE);
-                    break;
-                }
-                case 3: { // TL + TR inside
-                    eRight = interpEdge(v1, v2, x + s, y, x + s, y + s);
-                    eLeft = interpEdge(v0, v3, x, y, x, y + s);
-                    beginShape();
-                    vertex(x, y);
-                    vertex(x + s, y);
-                    vertex(eRight[0], eRight[1]);
-                    vertex(eLeft[0], eLeft[1]);
-                    endShape(CLOSE);
-                    break;
-                }
-                case 4: { // only BR inside
-                    eRight = interpEdge(v1, v2, x + s, y, x + s, y + s);
-                    eBottom = interpEdge(v2, v3, x + s, y + s, x, y + s);
-                    beginShape();
-                    vertex(eRight[0], eRight[1]);
-                    vertex(x + s, y + s);
-                    vertex(eBottom[0], eBottom[1]);
-                    endShape(CLOSE);
-                    break;
-                }
-                case 5: { // TL + BR inside (saddle case)
-                    eTop = interpEdge(v0, v1, x, y, x + s, y);
-                    eRight = interpEdge(v1, v2, x + s, y, x + s, y + s);
-                    eBottom = interpEdge(v2, v3, x + s, y + s, x, y + s);
-                    eLeft = interpEdge(v0, v3, x, y, x, y + s);
-                    // Two separate triangles for the saddle
-                    beginShape();
-                    vertex(x, y);
-                    vertex(eTop[0], eTop[1]);
-                    vertex(eLeft[0], eLeft[1]);
-                    endShape(CLOSE);
-                    beginShape();
-                    vertex(eRight[0], eRight[1]);
-                    vertex(x + s, y + s);
-                    vertex(eBottom[0], eBottom[1]);
-                    endShape(CLOSE);
-                    break;
-                }
-                case 6: { // TR + BR inside
-                    eTop = interpEdge(v0, v1, x, y, x + s, y);
-                    eBottom = interpEdge(v2, v3, x + s, y + s, x, y + s);
-                    beginShape();
-                    vertex(eTop[0], eTop[1]);
-                    vertex(x + s, y);
-                    vertex(x + s, y + s);
-                    vertex(eBottom[0], eBottom[1]);
-                    endShape(CLOSE);
-                    break;
-                }
-                case 7: { // TL + TR + BR inside (BL outside)
-                    eBottom = interpEdge(v2, v3, x + s, y + s, x, y + s);
-                    eLeft = interpEdge(v0, v3, x, y, x, y + s);
-                    beginShape();
-                    vertex(x, y);
-                    vertex(x + s, y);
-                    vertex(x + s, y + s);
-                    vertex(eBottom[0], eBottom[1]);
-                    vertex(eLeft[0], eLeft[1]);
-                    endShape(CLOSE);
-                    break;
-                }
-                case 8: { // only BL inside
-                    eBottom = interpEdge(v2, v3, x + s, y + s, x, y + s);
-                    eLeft = interpEdge(v0, v3, x, y, x, y + s);
-                    beginShape();
-                    vertex(eBottom[0], eBottom[1]);
-                    vertex(x, y + s);
-                    vertex(eLeft[0], eLeft[1]);
-                    endShape(CLOSE);
-                    break;
-                }
-                case 9: { // TL + BL inside
-                    eTop = interpEdge(v0, v1, x, y, x + s, y);
-                    eBottom = interpEdge(v2, v3, x + s, y + s, x, y + s);
-                    beginShape();
-                    vertex(x, y);
-                    vertex(eTop[0], eTop[1]);
-                    vertex(eBottom[0], eBottom[1]);
-                    vertex(x, y + s);
-                    endShape(CLOSE);
-                    break;
-                }
-                case 10: { // TR + BL inside (saddle case)
-                    eTop = interpEdge(v0, v1, x, y, x + s, y);
-                    eRight = interpEdge(v1, v2, x + s, y, x + s, y + s);
-                    eBottom = interpEdge(v2, v3, x + s, y + s, x, y + s);
-                    eLeft = interpEdge(v0, v3, x, y, x, y + s);
-                    // Two separate triangles for the saddle
-                    beginShape();
-                    vertex(eTop[0], eTop[1]);
-                    vertex(x + s, y);
-                    vertex(eRight[0], eRight[1]);
-                    endShape(CLOSE);
-                    beginShape();
-                    vertex(eBottom[0], eBottom[1]);
-                    vertex(x, y + s);
-                    vertex(eLeft[0], eLeft[1]);
-                    endShape(CLOSE);
-                    break;
-                }
-                case 11: { // TL + TR + BL inside (BR outside)
-                    eRight = interpEdge(v1, v2, x + s, y, x + s, y + s);
-                    eBottom = interpEdge(v2, v3, x + s, y + s, x, y + s);
-                    beginShape();
-                    vertex(x, y);
-                    vertex(x + s, y);
-                    vertex(eRight[0], eRight[1]);
-                    vertex(eBottom[0], eBottom[1]);
-                    vertex(x, y + s);
-                    endShape(CLOSE);
-                    break;
-                }
-                case 12: { // BR + BL inside
-                    eRight = interpEdge(v1, v2, x + s, y, x + s, y + s);
-                    eLeft = interpEdge(v0, v3, x, y, x, y + s);
-                    beginShape();
-                    vertex(eRight[0], eRight[1]);
-                    vertex(x + s, y + s);
-                    vertex(x, y + s);
-                    vertex(eLeft[0], eLeft[1]);
-                    endShape(CLOSE);
-                    break;
-                }
-                case 13: { // TL + BR + BL inside (TR outside)
-                    eTop = interpEdge(v0, v1, x, y, x + s, y);
-                    eRight = interpEdge(v1, v2, x + s, y, x + s, y + s);
-                    beginShape();
-                    vertex(x, y);
-                    vertex(eTop[0], eTop[1]);
-                    vertex(eRight[0], eRight[1]);
-                    vertex(x + s, y + s);
-                    vertex(x, y + s);
-                    endShape(CLOSE);
-                    break;
-                }
-                case 14: { // TR + BR + BL inside (TL outside)
-                    eTop = interpEdge(v0, v1, x, y, x + s, y);
-                    eLeft = interpEdge(v0, v3, x, y, x, y + s);
-                    beginShape();
-                    vertex(eTop[0], eTop[1]);
-                    vertex(x + s, y);
-                    vertex(x + s, y + s);
-                    vertex(x, y + s);
-                    vertex(eLeft[0], eLeft[1]);
-                    endShape(CLOSE);
-                    break;
-                }
-            }
-        }
-    }
+// Recreate pixel buffer (call from windowResized)
+function resetGradientBuffer() {
+    _gradientImg = null;
 }

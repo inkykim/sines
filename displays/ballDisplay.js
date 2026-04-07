@@ -86,19 +86,6 @@ class Metaball {
         this.pulseLevel = 255;
     }
 
-    draw() {
-        // Color: max of routed band energy and kick pulse flash
-        const routing = AppSettings.routing;
-        const colorEnergy = bassEnergy * routing.color.bass + midEnergy * routing.color.mid + trebleEnergy * routing.color.treble;
-        let t = max(colorEnergy, this.pulseLevel / 255);
-        let r = lerp(BASE_COLOR[0], PEAK_COLOR[0], t);
-        let g = lerp(BASE_COLOR[1], PEAK_COLOR[1], t);
-        let b = lerp(BASE_COLOR[2], PEAK_COLOR[2], t);
-
-        noStroke();
-        fill(r, g, b);
-        circle(this.x, this.y, this.r * 2);
-    }
 }
 
 // initialize list of balls
@@ -120,18 +107,15 @@ function onEventDetected() {
     if (typeof triggerKickFlash === 'function') triggerKickFlash();
 }
 
-// draw the balls
+// draw the gradient field (balls are invisible attractors)
 function drawBall() {
     push();
     blendMode(BLEND);
-    if (USE_METAMERGE) {
-        drawMergedBlob();
-    } else {
-        for (const ball of balls) ball.draw();
-    }
+    drawGradientField();
     pop();
 }
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
+  if (typeof resetGradientBuffer === 'function') resetGradientBuffer();
 }
