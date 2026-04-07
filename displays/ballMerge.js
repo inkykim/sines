@@ -3,7 +3,7 @@
 // to a multi-stop color gradient via pixel buffer, with interference fringes.
 
 // --- configurable field parameters ---
-const FIELD_STEP = 8;        // grid spacing in pixels (larger = faster, blockier)
+const FIELD_STEP = 4;        // grid spacing in pixels (smaller = smoother, slower)
 const FIELD_NORM = 4.0;      // normalization divisor: fieldValue / FIELD_NORM maps to [0,1] for LUT
 
 // Cached pixel buffer for the gradient field
@@ -110,7 +110,9 @@ function drawGradientField() {
 
     _gradientImg.updatePixels();
 
-    // Upscale to full canvas — browser uses bilinear interpolation
+    // Enable bilinear smoothing for upscale (avoids blocky nearest-neighbor)
+    drawingContext.imageSmoothingEnabled = true;
+    drawingContext.imageSmoothingQuality = 'high';
     image(_gradientImg, 0, 0, width, height);
 }
 
