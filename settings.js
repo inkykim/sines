@@ -51,8 +51,8 @@ function hslToRgb(h, s, l) {
 // ── Schema descriptors (for future UI generation) ──────────────────────────
 
 const SETTINGS_SCHEMA = [
-    { id: 'baseColor',        type: 'color',   label: 'Base Color',         default: [0, 0, 0] },
-    { id: 'peakColor',        type: 'color',   label: 'Peak Color',         default: [255, 255, 255] },
+    { id: 'baseColor',        type: 'color',   label: 'Base Color',         default: [5, 2, 18] },
+    { id: 'peakColor',        type: 'color',   label: 'Peak Color',         default: [220, 240, 255] },
     { id: 'bgColor',          type: 'color',   label: 'Background Color',   default: [0, 0, 0] },
     { id: 'ballCount',        type: 'int',     label: 'Ball Count',         min: 1, max: 20, default: 10 },
     { id: 'speed',            type: 'int',     label: 'Speed',              min: 1, max: 10, default: 4 },
@@ -64,8 +64,10 @@ const SETTINGS_SCHEMA = [
     { id: 'reactivity',       type: 'float',   label: 'Reactivity',         min: 0.1, max: 5, default: 1.0 },
     { id: 'fringeIntensity',  type: 'float',   label: 'Fringe Intensity',   min: 0, max: 1, default: 0.4 },
     { id: 'palette',          type: 'palette', label: 'Gradient Palette',   default: [
-        { position: 0,   color: [0, 0, 0] },
-        { position: 1,   color: [255, 255, 255] }
+        { position: 0,    color: [5, 2, 18] },
+        { position: 0.35, color: [20, 60, 120] },
+        { position: 0.65, color: [0, 180, 200] },
+        { position: 1,    color: [220, 240, 255] }
     ]},
     { id: 'routing',          type: 'object',  label: 'Band Routing',       default: {
         radius:   { bass: 1, mid: 0, treble: 0 },
@@ -79,8 +81,8 @@ const SETTINGS_SCHEMA = [
 // ── AppSettings — the canonical state object ───────────────────────────────
 
 const AppSettings = {
-    baseColor:       [0, 0, 0],
-    peakColor:       [255, 255, 255],
+    baseColor:       [5, 2, 18],
+    peakColor:       [220, 240, 255],
     bgColor:         [0, 0, 0],
     ballCount:       10,
     speed:           4,
@@ -92,8 +94,10 @@ const AppSettings = {
     reactivity:      1.0,
     fringeIntensity: 0.4,
     palette: [
-        { position: 0, color: [0, 0, 0] },
-        { position: 1, color: [255, 255, 255] }
+        { position: 0,    color: [5, 2, 18] },
+        { position: 0.35, color: [20, 60, 120] },
+        { position: 0.65, color: [0, 180, 200] },
+        { position: 1,    color: [220, 240, 255] }
     ],
     routing: {
         radius:   { bass: 1, mid: 0, treble: 0 },
@@ -163,7 +167,7 @@ const _setterMap = {
     },
     metaMode: function(val) {
         AppSettings.metaMode = val;
-        if (typeof USE_METAMERGE !== 'undefined') USE_METAMERGE = val;
+        // metaMode is deprecated — gradient field always renders
     },
     cleanDisplay: function(val) {
         AppSettings.cleanDisplay = val;

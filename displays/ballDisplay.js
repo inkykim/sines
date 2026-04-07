@@ -4,8 +4,8 @@ let NUM_BALLS = 10;
 const R_MIN = 30;
 const R_MAX = 90;
 
-let BASE_COLOR = [0, 0, 0];
-let PEAK_COLOR = [255, 255, 255];
+let BASE_COLOR = [5, 2, 18];
+let PEAK_COLOR = [220, 240, 255];
 
 // functions for bringing changes from UI
 function setBaseColorFromHex(hex) {
