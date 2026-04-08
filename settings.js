@@ -51,8 +51,8 @@ function hslToRgb(h, s, l) {
 // ── Schema descriptors (for future UI generation) ──────────────────────────
 
 const SETTINGS_SCHEMA = [
-    { id: 'baseColor',        type: 'color',   label: 'Base Color',         default: [0, 0, 0] },
-    { id: 'peakColor',        type: 'color',   label: 'Peak Color',         default: [255, 255, 255] },
+    { id: 'baseColor',        type: 'color',   label: 'Base Color',         default: [5, 2, 18] },
+    { id: 'peakColor',        type: 'color',   label: 'Peak Color',         default: [220, 240, 255] },
     { id: 'bgColor',          type: 'color',   label: 'Background Color',   default: [0, 0, 0] },
     { id: 'ballCount',        type: 'int',     label: 'Ball Count',         min: 1, max: 20, default: 10 },
     { id: 'speed',            type: 'int',     label: 'Speed',              min: 1, max: 10, default: 4 },
@@ -62,18 +62,26 @@ const SETTINGS_SCHEMA = [
     { id: 'kickCooldown',     type: 'int',     label: 'Kick Cooldown (ms)', min: 50, max: 1000, default: 200 },
     { id: 'kickFloor',        type: 'float',   label: 'Kick Floor',         min: 0, max: 100, default: 15 },
     { id: 'reactivity',       type: 'float',   label: 'Reactivity',         min: 0.1, max: 5, default: 1.0 },
+    { id: 'palette',          type: 'palette', label: 'Gradient Palette',   default: [
+        { position: 0,    color: [5, 2, 18] },
+        { position: 0.35, color: [20, 60, 120] },
+        { position: 0.65, color: [0, 180, 200] },
+        { position: 1,    color: [220, 240, 255] }
+    ]},
     { id: 'routing',          type: 'object',  label: 'Band Routing',       default: {
-        radius: { bass: 1, mid: 0, treble: 0 },
-        speed:  { bass: 0, mid: 1, treble: 0 },
-        color:  { bass: 0, mid: 0, treble: 1 }
+        radius:   { bass: 1, mid: 0, treble: 0 },
+        speed:    { bass: 0, mid: 1, treble: 0 },
+        color:    { bass: 0, mid: 0, treble: 1 },
+        gradient: { bass: 0.5, mid: 0.3, treble: 0.2 },
+
     }}
 ];
 
 // ── AppSettings — the canonical state object ───────────────────────────────
 
 const AppSettings = {
-    baseColor:       [0, 0, 0],
-    peakColor:       [255, 255, 255],
+    baseColor:       [5, 2, 18],
+    peakColor:       [220, 240, 255],
     bgColor:         [0, 0, 0],
     ballCount:       10,
     speed:           4,
@@ -83,10 +91,18 @@ const AppSettings = {
     kickCooldown:    200,
     kickFloor:       15,
     reactivity:      1.0,
+    palette: [
+        { position: 0,    color: [5, 2, 18] },
+        { position: 0.35, color: [20, 60, 120] },
+        { position: 0.65, color: [0, 180, 200] },
+        { position: 1,    color: [220, 240, 255] }
+    ],
     routing: {
-        radius: { bass: 1, mid: 0, treble: 0 },
-        speed:  { bass: 0, mid: 1, treble: 0 },
-        color:  { bass: 0, mid: 0, treble: 1 }
+        radius:   { bass: 1, mid: 0, treble: 0 },
+        speed:    { bass: 0, mid: 1, treble: 0 },
+        color:    { bass: 0, mid: 0, treble: 1 },
+        gradient: { bass: 0.5, mid: 0.3, treble: 0.2 },
+
     }
 };
 
@@ -117,11 +133,21 @@ const _setterMap = {
         AppSettings.baseColor = val.slice();
         if (typeof setBaseColorFromHex === 'function') setBaseColorFromHex(_rgbToHex(val));
         else if (typeof BASE_COLOR !== 'undefined') BASE_COLOR = val.slice();
+        // Sync palette stop[0]
+        if (AppSettings.palette && AppSettings.palette.length >= 2) {
+            AppSettings.palette[0].color = val.slice();
+            if (typeof rebuildGradientLUT === 'function') rebuildGradientLUT();
+        }
     },
     peakColor: function(val) {
         AppSettings.peakColor = val.slice();
         if (typeof setPeakColorFromHex === 'function') setPeakColorFromHex(_rgbToHex(val));
         else if (typeof PEAK_COLOR !== 'undefined') PEAK_COLOR = val.slice();
+        // Sync palette stop[N-1]
+        if (AppSettings.palette && AppSettings.palette.length >= 2) {
+            AppSettings.palette[AppSettings.palette.length - 1].color = val.slice();
+            if (typeof rebuildGradientLUT === 'function') rebuildGradientLUT();
+        }
     },
     bgColor: function(val) {
         AppSettings.bgColor = val.slice();
@@ -139,7 +165,7 @@ const _setterMap = {
     },
     metaMode: function(val) {
         AppSettings.metaMode = val;
-        if (typeof USE_METAMERGE !== 'undefined') USE_METAMERGE = val;
+        // metaMode is deprecated — gradient field always renders
     },
     cleanDisplay: function(val) {
         AppSettings.cleanDisplay = val;
@@ -164,6 +190,17 @@ const _setterMap = {
     reactivity: function(val) {
         AppSettings.reactivity = val;
         // reactivity is read directly from AppSettings in applyNoiseFloor()
+    },
+    palette: function(val) {
+        AppSettings.palette = JSON.parse(JSON.stringify(val));
+        // Sync baseColor/peakColor from first/last stops
+        if (val.length >= 2) {
+            AppSettings.baseColor = val[0].color.slice();
+            AppSettings.peakColor = val[val.length - 1].color.slice();
+            if (typeof BASE_COLOR !== 'undefined') BASE_COLOR = val[0].color.slice();
+            if (typeof PEAK_COLOR !== 'undefined') PEAK_COLOR = val[val.length - 1].color.slice();
+        }
+        if (typeof rebuildGradientLUT === 'function') rebuildGradientLUT();
     },
     routing: function(val) {
         AppSettings.routing = JSON.parse(JSON.stringify(val));
@@ -190,6 +227,24 @@ function _validateSetting(key, val) {
         }
     } else if (schema.type === 'bool') {
         val = !!val;
+    } else if (schema.type === 'palette') {
+        if (!Array.isArray(val) || val.length < 2) {
+            val = schema.default;
+        } else {
+            // Clamp to 2-8 stops
+            if (val.length > 8) val = val.slice(0, 8);
+            // Validate each stop
+            val = val.map(function(stop) {
+                return {
+                    position: Math.max(0, Math.min(1, stop.position || 0)),
+                    color: Array.isArray(stop.color) ?
+                        stop.color.map(function(v) { return Math.round(Math.max(0, Math.min(255, v))); }) :
+                        [0, 0, 0]
+                };
+            });
+            // Sort by position
+            val.sort(function(a, b) { return a.position - b.position; });
+        }
     }
     return val;
 }

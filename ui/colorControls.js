@@ -18,7 +18,7 @@ function setupColorControls(container) {
         .style('display', 'flex')
         .style('align-items', 'center')
         .style('gap', '4px');
-    basePicker = createColorPicker('#000000').parent(baseRight)
+    basePicker = createColorPicker('#050212').parent(baseRight)
         .style('width', '40px')
         .style('height', '28px')
         .style('border', 'none')
@@ -37,7 +37,7 @@ function setupColorControls(container) {
         .style('display', 'flex')
         .style('align-items', 'center')
         .style('gap', '4px');
-    peakPicker = createColorPicker('#FFFFFF').parent(peakRight)
+    peakPicker = createColorPicker('#DCF0FF').parent(peakRight)
         .style('width', '40px')
         .style('height', '28px')
         .style('border', 'none')

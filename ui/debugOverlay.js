@@ -48,7 +48,7 @@ function drawDebugOverlay() {
 
     // Ball count
     fill(180, 220, 255);
-    text(`Balls: ${balls.length}  |  Meta: ${USE_METAMERGE ? 'ON' : 'OFF'}`, xPos, yPos);
+    text(`Balls: ${balls.length}`, xPos, yPos);
     yPos += lineH;
 
     // Current speed (from first ball's base velocity)
